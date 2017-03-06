@@ -1,0 +1,20 @@
+group 'me.zxx'
+version '1.0'
+
+apply plugin: 'java'
+
+jar {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+    manifest.attributes 'Main-Class': 'me.zxx.douban.Main'
+}
+
+repositories {
+    maven { url 'http://maven.aliyun.com/nexus/content/groups/public/' }
+}
+
+dependencies {
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.8.7'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.8.7'
+    compile 'org.apache.httpcomponents:fluent-hc:4.5.2'
+}
