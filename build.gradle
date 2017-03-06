@@ -2,11 +2,13 @@ group 'me.zxx'
 version '1.0'
 
 apply plugin: 'java'
+apply plugin: 'application'
+
+mainClassName = "me.zxx.Main"
 
 jar {
     sourceCompatibility = 1.8
     targetCompatibility = 1.8
-    manifest.attributes 'Main-Class': 'me.zxx.douban.Main'
 }
 
 repositories {
