@@ -3,11 +3,13 @@ package me.zxx;
 import me.zxx.douban.GroupClient;
 import me.zxx.douban.Topic;
 import me.zxx.mail.SubMailClient;
+import me.zxx.redis.RedisClient;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Main {
     public static void main(String[] args) throws Exception {
@@ -24,20 +26,16 @@ public class Main {
         };
 
 
-        Map<String, List<Topic>> topics = getTopics(keys);
-        keys.forEach(it -> sendMail(topics.get(it), it));
+        Map<String, List<Topic>> topics = searchTopics(keys);
+        sendMail(topics);
     }
 
-    private static Map<String, List<Topic>> getTopics(List<String> keys) {
+    private static Map<String, List<Topic>> searchTopics(List<String> keys) {
         GroupClient groupClient = new GroupClient();
         return groupClient.searchTopics(keys);
     }
 
-    private static void sendMail(List<Topic> topics, String key) {
-        if (topics.size() == 0) {
-            return;
-        }
-
+    private static void sendMail(Map<String, List<Topic>> topics) {
         List<String> sendTo = new ArrayList<String>() {
             {
                 add("xinxin.zhong@nakedhub.com");
@@ -45,22 +43,31 @@ public class Main {
             }
         };
 
-        Map<String, Object> variables = new HashMap<String, Object>() {{
-            put("key", key);
-        }};
-
-        Map<String, Object> links = new HashMap<>();
-
-        for (int i = 0; i < 20; i++) {
-            String baseKey = String.format("topics%d.", i + 1);
-            variables.put(baseKey + "updated", topics.size() <= i ? "无数据" : topics.get(i).getUpdated().toString());
-            variables.put(baseKey + "title", topics.size() <= i ? "无数据" : topics.get(i).getTitle());
-
-            links.put(baseKey + "url", topics.size() <= i ? "无数据" : topics.get(i).getAlt());
-
+        String content = "<p><h1>豆瓣小组筛选消息</h1></p>";
+        for (String key : topics.keySet()) {
+            content += fillUpEmailContent(key, topics.get(key));
         }
 
         SubMailClient subMailClient = new SubMailClient();
-        subMailClient.sendMail(sendTo, variables, links);
+        subMailClient.sendMail(sendTo, content);
+    }
+
+    private static String fillUpEmailContent(String key, List<Topic> topics) {
+        String title = String.format("<p><h2>关键字：%s</h2></p>", key);
+        String contents = topics.stream().filter(Main::sendThisTopic).limit(30)
+                .map(it -> {
+                    setMailSent(it.getId());
+                    return String.format("<p>%s -- <a href='%s'>%s</a></p><hr/>",
+                            it.getUpdated().toString(), it.getAlt(), it.getTitle());
+                }).collect(Collectors.joining());
+        return contents.equals("") ? "" : title + contents;
+    }
+
+    private static boolean sendThisTopic(Topic topic) {
+        return RedisClient.get(topic.getId()) == null;
+    }
+
+    private static void setMailSent(String topicId) {
+        RedisClient.set(topicId, LocalDateTime.now().toString());
     }
 }
