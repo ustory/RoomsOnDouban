@@ -48,6 +48,10 @@ public class Main {
             content += fillUpEmailContent(key, topics.get(key));
         }
 
+        if (content.length() < 30) {//没有匹配到数据
+            return;
+        }
+
         SubMailClient subMailClient = new SubMailClient();
         subMailClient.sendMail(sendTo, content);
     }
@@ -56,7 +60,7 @@ public class Main {
         String title = String.format("<p><h2>关键字：%s</h2></p>", key);
         String contents = topics.stream().filter(Main::sendThisTopic).limit(30)
                 .map(it -> {
-                    setMailSent(it.getId());
+                    setMailSent(it);
                     return String.format("<p>%s -- <a href='%s'>%s</a></p><hr/>",
                             it.getUpdated().toString(), it.getAlt(), it.getTitle());
                 }).collect(Collectors.joining());
@@ -64,10 +68,11 @@ public class Main {
     }
 
     private static boolean sendThisTopic(Topic topic) {
-        return RedisClient.get(topic.getId()) == null;
+        return RedisClient.get(topic.getId()) == null && RedisClient.get(topic.getAuthor().getId()) == null;
     }
 
-    private static void setMailSent(String topicId) {
-        RedisClient.set(topicId, LocalDateTime.now().toString());
+    private static void setMailSent(Topic topic) {
+        RedisClient.set(topic.getId(), LocalDateTime.now().toString());
+        RedisClient.set(topic.getAuthor().getId(), LocalDateTime.now().toString());
     }
 }

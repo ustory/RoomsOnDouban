@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 
 public class Topic {
     private String id;
+    private Author author;
     private String title;
     private String content;
     private String alt;
@@ -16,6 +17,14 @@ public class Topic {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public Author getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(Author author) {
+        this.author = author;
     }
 
     public String getTitle() {
@@ -56,5 +65,17 @@ public class Topic {
 
     public void setUpdated(LocalDateTime updated) {
         this.updated = updated;
+    }
+
+    public class Author {
+        private String id;
+
+        public String getId() {
+            return id;
+        }
+
+        public void setId(String id) {
+            this.id = id;
+        }
     }
 }
